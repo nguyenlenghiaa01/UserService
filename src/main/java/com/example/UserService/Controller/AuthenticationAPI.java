@@ -103,6 +103,7 @@ public class AuthenticationAPI {
         return ResponseEntity.ok(message);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/accounts/search")
     public ResponseEntity<DataResponse<AccountResponse>> searchAccounts(
             @RequestParam String name,
