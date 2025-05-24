@@ -5,13 +5,11 @@ import com.example.UserService.Model.Request.*;
 import com.example.UserService.Model.Response.AccountResponse;
 import com.example.UserService.Model.Response.DataResponse;
 import com.example.UserService.Service.AuthenticationService;
-import com.example.UserService.Service.EmailService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,8 +27,7 @@ public class AuthenticationAPI {
     ModelMapper modelMapper = new ModelMapper();
     @Autowired
     AuthenticationService authenticationService;
-    @Autowired
-    EmailService emailService;
+
     @PostMapping("register")
     public ResponseEntity <AccountResponse>register(@Valid @RequestBody RegisterRequest registerRequest) {
         AccountResponse newAccount = authenticationService.register(registerRequest);

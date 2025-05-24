@@ -15,6 +15,8 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     Account findAccountByUserName(String userName);
     Account findAccountByEmail(String email);
 
+    Account findAccountByPhone(String phone);
+
     Page<Account> findAll(Pageable pageable);
     @Query("SELECT a FROM Account a WHERE LOWER(a.fullName) LIKE LOWER(CONCAT('%', :name, '%'))")
     Page<Account> searchAccount(@Param("name") String name, Pageable pageable);

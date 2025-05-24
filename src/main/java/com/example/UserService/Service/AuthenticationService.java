@@ -1,11 +1,13 @@
 package com.example.UserService.Service;
 
 import com.example.UserService.Enity.Account;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
+import com.example.UserService.Entity.ForgotPasswordEvent;
 import org.springframework.data.domain.Pageable;
 import com.example.UserService.Exception.AuthException;
 import com.example.UserService.Exception.DuplicateEntity;
-import com.example.UserService.Model.EmailDetail;
 import com.example.UserService.Model.Request.*;
 import com.example.UserService.Model.Response.AccountResponse;
 import com.example.UserService.Model.Response.DataResponse;
@@ -16,6 +18,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -45,12 +48,23 @@ public class AuthenticationService implements UserDetailsService {
     private TokenService tokenService;
 
     @Autowired
-    private EmailService emailService;
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
 
 
     public AccountResponse register(RegisterRequest registerRequest) {
         Account account = modelMapper.map(registerRequest, Account.class);
         try {
+            if (accountRepository.findAccountByEmail(registerRequest.getEmail()) != null) {
+                throw new DuplicateEntity("Email already exists!");
+            }
+
+            if (accountRepository.findAccountByPhone(registerRequest.getPhone()) != null) {
+                throw new DuplicateEntity("Phone already exists!");
+            }
             String originPassword = account.getPassword();
             account.setPassword(passwordEncoder.encode(originPassword));
             String getAccountUuid;
@@ -60,14 +74,6 @@ public class AuthenticationService implements UserDetailsService {
             account.setUuid(getAccountUuid);
             account.setImage("");
             Account newAccount = accountRepository.save(account);
-////            String otp = otpService.generateOtp();
-////            emailService.sendOtp(account.getEmail(), otp);
-////            // gui mail
-//            EmailDetail emailDetail = new EmailDetail();
-//            emailDetail.setReceiver(newAccount);
-//            emailDetail.setSubject("WelCome");
-//            emailDetail.setLink("abcd");
-//            emailService.sendEmail(emailDetail);
             return modelMapper.map(newAccount, AccountResponse.class);
         } catch (Exception e) {
             if (e.getMessage().contains(account.getUsername())) {
@@ -167,18 +173,34 @@ public class AuthenticationService implements UserDetailsService {
         return accountRepository.findAccountByUuid(account.getUuid());
     }
 
-    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest){
+
+    private final String TOPIC = "forgot-password-events";
+
+
+
+    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
         Account account = accountRepository.findAccountByEmail(forgotPasswordRequest.getEmail());
-        if(account == null){
-            throw new NotFoundException("Email not found !");
-        }else{
-            EmailDetail emailDetail = new EmailDetail();
-            emailDetail.setReceiver(account);
-            emailDetail.setSubject("Reset Password");
-            emailDetail.setLink("https://localhost:8082/reset-password?token="+tokenService.generateToken(account));
-            emailService.sendEmail(emailDetail);
+        if (account == null) {
+            throw new NotFoundException("Email not found!");
+        } else {
+            try {
+
+                String jwtToken = tokenService.generateToken(account);
+                System.out.println("Generated JWT token: " + jwtToken);
+                ForgotPasswordEvent event = new ForgotPasswordEvent();
+                event.setEmail(forgotPasswordRequest.getEmail());
+                event.setToken(jwtToken);
+
+                String eventJson = objectMapper.writeValueAsString(event);
+                kafkaTemplate.send(TOPIC, eventJson);
+
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize forgot password event", e);
+            }
         }
     }
+
+
 
     public void resetPassword(ResetPasswordRequest resetPasswordRequest){
         Account account = getCurrentAccount();
@@ -263,5 +285,6 @@ public class AuthenticationService implements UserDetailsService {
 
         return dataResponse;
     }
+
 
 }

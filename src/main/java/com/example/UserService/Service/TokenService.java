@@ -14,9 +14,11 @@ import java.util.Date;
 
 @Service
 public class TokenService {
+
     @Autowired
     private AccountRepository accountRepository;
-    private String SECRET_KEY = "4bb6d1dfbafb64a681139d1586b6f1160d18159afd57c8c79136d7490630407c";
+
+    private final String SECRET_KEY = "4bb6d1dfbafb64a681139d1586b6f1160d18159afd57c8c79136d7490630407c";
 
     private SecretKey getSigninKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
@@ -24,24 +26,23 @@ public class TokenService {
     }
 
     public String generateToken(Account account) {
-        String token = Jwts.builder()
-                .subject(account.getUuid() + "")
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 10008 * 60 * 60 * 24))//1 day
+        return Jwts.builder()
+                .setSubject(account.getEmail())
+                .claim("role", account.getRole().toString())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 1 ngày
                 .signWith(getSigninKey())
                 .compact();
-        return token;
     }
 
-    // verify token
     public Account getAccountByToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigninKey())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigninKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
 
-        String idString = claims.getSubject();
-        return accountRepository.findAccountByUuid(idString);
+        String email = claims.getSubject();
+        return accountRepository.findAccountByEmail(email);
     }
 }
