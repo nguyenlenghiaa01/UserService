@@ -1,6 +1,7 @@
+
 package com.example.UserService.Config;
 
-import com.example.UserService.Enity.Account;
+import com.example.UserService.Enity.UserPrincipal;
 import com.example.UserService.Exception.AuthException;
 import com.example.UserService.Service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -9,8 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -21,85 +21,82 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 @Component
+@RequiredArgsConstructor
 public class Filter extends OncePerRequestFilter {
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService jwtUtil;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
-    @Autowired
-    @Qualifier("handlerExceptionResolver")
-    HandlerExceptionResolver resolver;
-
-    private final List<String> AUTH_PERMISSION = List.of(
+    private final List<String> PUBLIC_USER_SERVICE_APIS = List.of(
+            "/api/users/login",
+            "/api/users/register",
+            "/api/users/forgot-password",
+            "/api/users/getEmail",
             "/swagger-ui/**",
-            "/v3/api-docs/**",
-            "/swagger-resources/**",
-            "/api/login",
-            "/api/register",
-            "forgot-password"
+            "/v3/api-docs/**"
     );
 
-    public boolean checkIsPublicAPI(String uri) {
-        // uri: /api/register
-        // nếu gặp những cái api trong list ở trên => cho phép truy cập lun => true
-        AntPathMatcher patchMatch = new AntPathMatcher();
-        // check token => false
-        return AUTH_PERMISSION.stream().anyMatch(pattern -> patchMatch.match(pattern, uri));
-    }
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        // check xem cái api mà người dùng yêu cầu có phải là 1 public api?
+        String requestURI = request.getRequestURI();
 
-        boolean isPublicAPI = checkIsPublicAPI(request.getRequestURI());
+        boolean isPublicAPI = PUBLIC_USER_SERVICE_APIS.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
 
         if (isPublicAPI) {
             filterChain.doFilter(request, response);
-        } else {
-            String token = getToken(request);
-            if (token == null) {
-                // ko được phép truy cập
-                resolver.resolveException(request, response, null, new AuthException("Empty token!"));
+            return;
+        }
+
+        String token = getTokenFromRequest(request);
+
+        if (token == null) {
+            handlerExceptionResolver.resolveException(request, response, null, new AuthException("JWT token is missing."));
+            return;
+        }
+
+        UserPrincipal userPrincipal;
+        try {
+            userPrincipal = jwtUtil.parseToken(token);
+            if (userPrincipal == null || userPrincipal.getUserId() == null || userPrincipal.getAuthorities().isEmpty()) {
+                handlerExceptionResolver.resolveException(request, response, null, new AuthException("Invalid JWT claims or missing user information."));
                 return;
             }
 
-            // => có token
-            // check xem token có đúng hay ko => lấy thông tin account từ token
-            Account account;
-            try {
-                account = tokenService.getAccountByToken(token);
-            } catch (ExpiredJwtException e) {
-                // response token hết hạn
-                resolver.resolveException(request, response, null, new AuthException("Expired token!"));
-                return;
-            } catch (MalformedJwtException malformedJwtException) {
-                // response token sai
-                resolver.resolveException(request, response, null, new AuthException("Invalid token!"));
-                return;
-            }
-            // => token chuẩn
-            // => cho phép truy cập
-            // => lưu lại thông tin account
+        } catch (ExpiredJwtException e) {
+            handlerExceptionResolver.resolveException(request, response, null, new AuthException("JWT token has expired."));
+            return;
+        } catch (MalformedJwtException e) {
+            handlerExceptionResolver.resolveException(request, response, null, new AuthException("Invalid JWT token format."));
+            return;
+        } catch (Exception e) { // Catch các lỗi khác trong quá trình xử lý token
+            handlerExceptionResolver.resolveException(request, response, null, new AuthException("JWT token processing error: " + e.getMessage()));
+            return;
+        }
+
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    account,
-                    token,
-                    account.getAuthorities()
+                    userPrincipal,
+                    null,
+                    userPrincipal.getAuthorities()
             );
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            // token ok, cho vao`
-            filterChain.doFilter(request, response);
         }
 
+        filterChain.doFilter(request, response);
     }
 
-    public String getToken(HttpServletRequest request) {
+    private String getTokenFromRequest(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null) return null;
-        return authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }

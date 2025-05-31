@@ -101,7 +101,7 @@ public class AuthenticationService implements UserDetailsService {
             // tai khoan co ton tai
             Account account = (Account) authentication.getPrincipal();
             AccountResponse accountResponse = modelMapper.map(account, AccountResponse.class);
-            accountResponse.setToken(tokenService.generateToken(account));
+            accountResponse.setToken(null);
             return accountResponse;
         } catch (Exception e) {
             throw new EntityNotFoundException("User name or password is invalid !");
@@ -173,40 +173,10 @@ public class AuthenticationService implements UserDetailsService {
         return accountRepository.findAccountByUuid(account.getUuid());
     }
 
-
-    private final String TOPIC = "forgot-password-events";
-
-
-
-    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
-        Account account = accountRepository.findAccountByEmail(forgotPasswordRequest.getEmail());
-        if (account == null) {
-            throw new NotFoundException("Email not found!");
-        } else {
-            try {
-
-                String jwtToken = tokenService.generateToken(account);
-                System.out.println("Generated JWT token: " + jwtToken);
-                ForgotPasswordEvent event = new ForgotPasswordEvent();
-                event.setEmail(forgotPasswordRequest.getEmail());
-                event.setToken(jwtToken);
-
-                String eventJson = objectMapper.writeValueAsString(event);
-                kafkaTemplate.send(TOPIC, eventJson);
-
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize forgot password event", e);
-            }
-        }
-    }
-
-
-
     public void resetPassword(ResetPasswordRequest resetPasswordRequest){
         Account account = getCurrentAccount();
         account.setPassword(passwordEncoder.encode(resetPasswordRequest.getPassword()));
         accountRepository.save(account);
-
     }
 
     public String changePassword(ChangePasswordRequest changePasswordRequest) {
@@ -286,5 +256,22 @@ public class AuthenticationService implements UserDetailsService {
         return dataResponse;
     }
 
+    public AccountResponse findAccountByEmail(String email){
+        Account account = accountRepository.findAccountByEmail(email);
+        if(account == null){
+            throw new AuthException("Email not exist");
+        }
+
+        AccountResponse accountResponse = new AccountResponse();
+        accountResponse.setUserName(account.getUsername());
+        accountResponse.setEmail(account.getEmail());
+        accountResponse.setFullName(account.getFullName());
+        accountResponse.setPhone(account.getPhone());
+        accountResponse.setAddress(account.getAddress());
+        accountResponse.setRole(account.getRole());
+        accountResponse.setImage(account.getImage());
+
+        return accountResponse;
+    }
 
 }
