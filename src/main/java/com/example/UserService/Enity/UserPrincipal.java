@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor // <--- Annotation này tạo constructor với TẤT CẢ các fields
+@AllArgsConstructor
 public class UserPrincipal implements UserDetails {
     private String userId;
-    private Collection<String> roles; // Đây là Collection<String>
+    private Collection<String> roles;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -32,5 +32,4 @@ public class UserPrincipal implements UserDetails {
     public String getUsername() {
         return null;
     }
-    // ... các method của UserDetails ...
 }
