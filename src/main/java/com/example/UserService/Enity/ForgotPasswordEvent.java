@@ -1,4 +1,4 @@
-package com.example.UserService.Entity;
+package com.example.UserService.Enity;
 
 import lombok.*;
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("api")
+@RequestMapping("/api/users")
 @SecurityRequirement(name = "api")
 @CrossOrigin("*")
 public class AuthenticationAPI {

@@ -4,7 +4,7 @@ import com.example.UserService.Enity.Account;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
-import com.example.UserService.Entity.ForgotPasswordEvent;
+import com.example.UserService.Enity.ForgotPasswordEvent;
 import org.springframework.data.domain.Pageable;
 import com.example.UserService.Exception.AuthException;
 import com.example.UserService.Exception.DuplicateEntity;
