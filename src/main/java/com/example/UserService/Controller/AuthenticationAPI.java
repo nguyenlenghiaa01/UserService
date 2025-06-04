@@ -28,13 +28,13 @@ public class AuthenticationAPI {
     @Autowired
     AuthenticationService authenticationService;
 
-    @PostMapping("register")
+    @PostMapping("/users/register")
     public ResponseEntity <AccountResponse>register(@Valid @RequestBody RegisterRequest registerRequest) {
         AccountResponse newAccount = authenticationService.register(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(newAccount);
     }
 
-    @PostMapping("login")
+    @PostMapping("/users/login")
     public ResponseEntity <AccountResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         AccountResponse accountResponse = authenticationService.login(loginRequest);
         if (accountResponse == null) {
@@ -82,26 +82,20 @@ public class AuthenticationAPI {
 //        }
 //    }
 
-    @PostMapping("forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest){
-        authenticationService.forgotPassword(forgotPasswordRequest);
-        return ResponseEntity.ok("forgot password successfully");
-    }
-
-    @PostMapping("reset-password")
+    @PostMapping("/users/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest){
         authenticationService.resetPassword(resetPasswordRequest);
         return ResponseEntity.ok("reset password successfully");
     }
 
-    @PostMapping("change-password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+    @PostMapping("/users/change-password")
+    public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         String message = authenticationService.changePassword(changePasswordRequest);
         return ResponseEntity.ok(message);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/accounts/search")
+    @GetMapping("/users/search")
     public ResponseEntity<DataResponse<AccountResponse>> searchAccounts(
             @RequestParam String name,
             @RequestParam(defaultValue = "0") int page,
@@ -110,6 +104,12 @@ public class AuthenticationAPI {
         Pageable pageable = PageRequest.of(page, size);
         DataResponse<AccountResponse> accounts = authenticationService.searchAccounts(name, pageable);
         return ResponseEntity.ok(accounts);
+    }
+
+    @GetMapping("/users/getEmail")
+    public ResponseEntity<AccountResponse> getAccountByEmail(@RequestParam String email) {
+        AccountResponse accountResponse = authenticationService.findAccountByEmail(email);
+        return ResponseEntity.ok(accountResponse);
     }
 
 }
