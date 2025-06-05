@@ -263,6 +263,7 @@ public class AuthenticationService implements UserDetailsService {
         }
 
         AccountResponse accountResponse = new AccountResponse();
+        accountResponse.setUuid(account.getUuid());
         accountResponse.setUserName(account.getUsername());
         accountResponse.setEmail(account.getEmail());
         accountResponse.setFullName(account.getFullName());
