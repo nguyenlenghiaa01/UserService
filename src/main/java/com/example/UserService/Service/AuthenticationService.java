@@ -1,6 +1,7 @@
 package com.example.UserService.Service;
 
 import com.example.UserService.Enity.Account;
+import com.example.UserService.Enity.UserPrincipal;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
@@ -168,10 +169,15 @@ public class AuthenticationService implements UserDetailsService {
         return accountRepository.save(oldAccount);
     }
 
-    public Account getCurrentAccount(){
-        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return accountRepository.findAccountByUuid(account.getUuid());
+    public Account getCurrentAccount() {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return Optional.ofNullable(accountRepository.findAccountByEmail(email))
+                .orElseThrow(() -> new AuthException("Account not found"));
     }
+
+
+
+
 
     public void resetPassword(ResetPasswordRequest resetPasswordRequest){
         Account account = getCurrentAccount();
