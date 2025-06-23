@@ -42,7 +42,8 @@ public class Filter extends OncePerRequestFilter {
             "/api/users/getEmail",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/swagger-resources/**"
+            "/swagger-resources/**",
+            "/actuator/**"
     );
 
     public boolean checkIsPublicAPI(String uri) {
