@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users")
 @SecurityRequirement(name = "api")
 @CrossOrigin("*")
 public class AuthenticationAPI {
@@ -28,13 +28,13 @@ public class AuthenticationAPI {
     @Autowired
     AuthenticationService authenticationService;
 
-    @PostMapping("/users/register")
+    @PostMapping("/register")
     public ResponseEntity <AccountResponse>register(@Valid @RequestBody RegisterRequest registerRequest) {
         AccountResponse newAccount = authenticationService.register(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(newAccount);
     }
 
-    @PostMapping("/users/login")
+    @PostMapping("/login")
     public ResponseEntity <AccountResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         AccountResponse accountResponse = authenticationService.login(loginRequest);
         if (accountResponse == null) {
@@ -44,7 +44,7 @@ public class AuthenticationAPI {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("account")
+    @GetMapping("/account")
     public ResponseEntity <DataResponse<AccountResponse>>getAllAccount(@RequestParam int page,
                                                                        @RequestParam int size){
         DataResponse<AccountResponse> accounts = authenticationService.getAllAccount(page, size);
@@ -82,20 +82,20 @@ public class AuthenticationAPI {
 //        }
 //    }
 
-    @PostMapping("/users/reset-password")
+    @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest){
         authenticationService.resetPassword(resetPasswordRequest);
         return ResponseEntity.ok("reset password successfully");
     }
 
-    @PostMapping("/users/change-password")
+    @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         String message = authenticationService.changePassword(changePasswordRequest);
         return ResponseEntity.ok(message);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/users/search")
+    @GetMapping("/search")
     public ResponseEntity<DataResponse<AccountResponse>> searchAccounts(
             @RequestParam String name,
             @RequestParam(defaultValue = "0") int page,
@@ -106,7 +106,7 @@ public class AuthenticationAPI {
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/users/getEmail")
+    @GetMapping("/getEmail")
     public ResponseEntity<AccountResponse> getAccountByEmail(@RequestParam String email) {
         AccountResponse accountResponse = authenticationService.findAccountByEmail(email);
         return ResponseEntity.ok(accountResponse);
