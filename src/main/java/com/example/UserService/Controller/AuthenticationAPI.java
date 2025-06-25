@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 @SecurityRequirement(name = "api")
-@CrossOrigin("*")
 public class AuthenticationAPI {
 
     ModelMapper modelMapper = new ModelMapper();
