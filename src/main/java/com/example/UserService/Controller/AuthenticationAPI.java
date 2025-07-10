@@ -111,5 +111,11 @@ public class AuthenticationAPI {
         return ResponseEntity.ok(accountResponse);
     }
 
+    @GetMapping("/{uuid}")
+    public ResponseEntity<AccountResponse> getUserByUuid(@PathVariable String uuid){
+        AccountResponse accountResponse = authenticationService.getUserByUuid(uuid);
+        return ResponseEntity.ok(accountResponse);
+    }
+
 }
 

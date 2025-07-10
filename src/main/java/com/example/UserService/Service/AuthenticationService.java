@@ -281,4 +281,19 @@ public class AuthenticationService implements UserDetailsService {
         return accountResponse;
     }
 
+    public AccountResponse getUserByUuid(String uuid){
+        Account account = accountRepository.findAccountByUuid(uuid);
+        if(account == null){
+            throw new NotFoundException("account not found");
+        }
+        AccountResponse accountResponse = new AccountResponse();
+        accountResponse.setUuid(account.getUuid());
+        accountResponse.setImage(account.getImage());
+        accountResponse.setPhone(account.getPhone());
+        accountResponse.setAddress(account.getAddress());
+        accountResponse.setEmail(account.getEmail());
+        accountResponse.setFullName(account.getFullName());
+        return accountResponse;
+    }
+
 }
