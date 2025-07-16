@@ -1,6 +1,7 @@
 package com.example.UserService.Controller;
 
 import com.example.UserService.Enity.Account;
+import com.example.UserService.InterFace.IAuthenticationService;
 import com.example.UserService.Model.Request.*;
 import com.example.UserService.Model.Response.AccountResponse;
 import com.example.UserService.Model.Response.DataResponse;
@@ -8,6 +9,7 @@ import com.example.UserService.Service.AuthenticationService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -21,11 +23,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 @SecurityRequirement(name = "api")
+@RequiredArgsConstructor
 public class AuthenticationAPI {
 
-    ModelMapper modelMapper = new ModelMapper();
-    @Autowired
-    AuthenticationService authenticationService;
+    private final ModelMapper modelMapper;
+    private final IAuthenticationService authenticationService;
 
     @PostMapping("/register")
     public ResponseEntity <AccountResponse>register(@Valid @RequestBody RegisterRequest registerRequest) {
@@ -69,17 +71,6 @@ public class AuthenticationAPI {
         Account newAccount = authenticationService.deleteAccount(id);
         return ResponseEntity.ok(newAccount);
     }
-
-//    @PostMapping("/loginGoogle")
-//    public ResponseEntity<String> login(@RequestBody String idToken) {
-//        try {
-//            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-//            String uid = decodedToken.getUid();
-//            return ResponseEntity.ok("User ID: " + uid);
-//        } catch (FirebaseAuthException e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Error: " + e.getMessage());
-//        }
-//    }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest){

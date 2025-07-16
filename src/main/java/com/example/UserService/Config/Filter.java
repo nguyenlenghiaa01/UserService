@@ -1,6 +1,7 @@
 package com.example.UserService.Config;
 
 import com.example.UserService.Exception.AuthException;
+import com.example.UserService.InterFace.ITokenService;
 import com.example.UserService.Model.Response.AuthorResponse;
 import com.example.UserService.Service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -28,8 +29,12 @@ import java.util.List;
 public class Filter extends OncePerRequestFilter {
 
 
+    private final ITokenService tokenService;
+
     @Autowired
-    private TokenService tokenService;
+    public Filter (ITokenService tokenService){
+        this.tokenService = tokenService;
+    }
 
     @Autowired
     @Qualifier("handlerExceptionResolver")
