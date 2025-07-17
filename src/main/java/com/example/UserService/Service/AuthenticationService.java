@@ -1,11 +1,9 @@
 package com.example.UserService.Service;
 
 import com.example.UserService.Enity.Account;
-import com.example.UserService.Enity.UserPrincipal;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.UserService.InterFace.IAuthenticationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import com.example.UserService.Enity.ForgotPasswordEvent;
 import org.springframework.data.domain.Pageable;
 import com.example.UserService.Exception.AuthException;
 import com.example.UserService.Exception.DuplicateEntity;
@@ -19,7 +17,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,30 +26,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.*;
 
 @Service
 @Lazy
-public class AuthenticationService implements UserDetailsService {
+@RequiredArgsConstructor
+public class AuthenticationService implements UserDetailsService, IAuthenticationService {
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    private ModelMapper modelMapper = new ModelMapper();
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private TokenService tokenService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private final AccountRepository accountRepository;
+    private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
 
 
@@ -109,7 +93,7 @@ public class AuthenticationService implements UserDetailsService {
         }
     }
 
-    public DataResponse<AccountResponse> getAllAccount(@RequestParam int page, @RequestParam int size) {
+    public DataResponse<AccountResponse> getAllAccount(int page, int size) {
         Page accountPage = accountRepository.findAll(PageRequest.of(page, size));
         List<Account> accounts = accountPage.getContent();
         List<AccountResponse> accountResponses = new ArrayList<>();
@@ -205,35 +189,6 @@ public class AuthenticationService implements UserDetailsService {
             throw new AuthException(e.getMessage());
         }
     }
-
-//    public UserResponse loginGoogle(String token){
-//        try {
-//            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
-//            String email = decodedToken.getEmail();
-//            Account account = accountRepository.findAccountByEmail(email);
-//            if(account == null) {
-//                Account newAccount = new Account();
-//                newAccount.setUserName(decodedToken.getEmail());
-//                newAccount.setEmail(decodedToken.getEmail());
-//                newAccount.setFullName(decodedToken.getName());
-//                newAccount.setImage(decodedToken.getPicture());
-//                newAccount.setRole(Role.CONSULTANT);
-//                account=accountRepository.save(newAccount);
-//            }
-//            UserResponse userResponse = new UserResponse();
-//            userResponse.setToken(token);
-//            userResponse.setFullName(account.getFullName());
-//            userResponse.setImage(account.getImage());
-//            userResponse.setRole(account.getRole());
-//
-//            return userResponse;
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("Google token verification failed", e);
-//        }
-//
-//    }
-
     public DataResponse<AccountResponse> searchAccounts(String name, Pageable pageable) {
         Page<Account> accounts = accountRepository.searchAccount(name, pageable);
         List<Account> accountss = accounts.getContent();
@@ -278,6 +233,21 @@ public class AuthenticationService implements UserDetailsService {
         accountResponse.setRole(account.getRole());
         accountResponse.setImage(account.getImage());
 
+        return accountResponse;
+    }
+
+    public AccountResponse getUserByUuid(String uuid){
+        Account account = accountRepository.findAccountByUuid(uuid);
+        if(account == null){
+            throw new NotFoundException("account not found");
+        }
+        AccountResponse accountResponse = new AccountResponse();
+        accountResponse.setUuid(account.getUuid());
+        accountResponse.setImage(account.getImage());
+        accountResponse.setPhone(account.getPhone());
+        accountResponse.setAddress(account.getAddress());
+        accountResponse.setEmail(account.getEmail());
+        accountResponse.setFullName(account.getFullName());
         return accountResponse;
     }
 
