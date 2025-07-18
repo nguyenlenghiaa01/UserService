@@ -7,6 +7,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+
 @Configuration
 public class InitialData {
     @Bean
@@ -15,9 +19,11 @@ public class InitialData {
             // Initialize the application repository with some data
             if(accountRepository.findAll().isEmpty()) {
                 Account admin = Account.builder()
+                        .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("admin")
                         .password("123456")
                         .role(Role.ADMIN)
+                        .createdAt(LocalDateTime.now())
                         .email("nghialncse170125@fpt.edu.vn")
                         .fullName("Admin user")
                         .phone("0987654321")
@@ -27,10 +33,12 @@ public class InitialData {
                 accountRepository.save(admin);
 
                 Account consultant = Account.builder()
+                        .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("consultant")
                         .password("123456")
                         .role(Role.CONSULTANT)
                         .email("sonnqse182727@fpt.edu.vn")
+                        .createdAt(LocalDateTime.now())
                         .fullName("Consultant user")
                         .phone("0987654322")
                         .address("FPT Admission System")
@@ -39,10 +47,12 @@ public class InitialData {
                 accountRepository.save(consultant);
 
                 Account student = Account.builder()
+                        .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("student")
                         .password("123456")
                         .role(Role.USER)
                         .email("quanctse182750@fpt.edu.vn")
+                        .createdAt(LocalDateTime.now())
                         .fullName("Toi la sinh vien")
                         .phone("0987654323")
                         .address("SE1701 - FPT University")
