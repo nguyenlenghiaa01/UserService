@@ -3,16 +3,20 @@ package com.example.UserService.Config;
 import com.example.UserService.Enity.Account;
 import com.example.UserService.Enum.Role;
 import com.example.UserService.Repository.AccountRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 
 @Configuration
+@RequiredArgsConstructor
 public class InitialData {
+    private final PasswordEncoder passwordEncoder;
     @Bean
     public CommandLineRunner commandLineRunner(AccountRepository accountRepository) {
         return args -> {
@@ -21,7 +25,7 @@ public class InitialData {
                 Account admin = Account.builder()
                         .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("admin")
-                        .password("123456")
+                        .password(passwordEncoder.encode("123456"))
                         .role(Role.ADMIN)
                         .createdAt(LocalDateTime.now())
                         .email("nghialncse170125@fpt.edu.vn")
@@ -35,7 +39,7 @@ public class InitialData {
                 Account consultant = Account.builder()
                         .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("consultant")
-                        .password("123456")
+                        .password(passwordEncoder.encode("123456"))
                         .role(Role.CONSULTANT)
                         .email("sonnqse182727@fpt.edu.vn")
                         .createdAt(LocalDateTime.now())
@@ -49,7 +53,7 @@ public class InitialData {
                 Account student = Account.builder()
                         .uuid(String.valueOf(UUID.randomUUID()))
                         .userName("student")
-                        .password("123456")
+                        .password(passwordEncoder.encode("123456"))
                         .role(Role.USER)
                         .email("quanctse182750@fpt.edu.vn")
                         .createdAt(LocalDateTime.now())
