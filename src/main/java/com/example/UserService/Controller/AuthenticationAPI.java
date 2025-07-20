@@ -102,7 +102,6 @@ public class AuthenticationAPI {
         return ResponseEntity.ok(accountResponse);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'CONSULTANT')")
     @GetMapping("/{uuid}")
     public ResponseEntity<AccountResponse> getUserByUuid(@PathVariable String uuid){
         AccountResponse accountResponse = authenticationService.getUserByUuid(uuid);
