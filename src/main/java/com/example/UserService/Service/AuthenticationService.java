@@ -1,7 +1,10 @@
 package com.example.UserService.Service;
 
 import com.example.UserService.Enity.Account;
+import com.example.UserService.Events.UserReportEvent;
 import com.example.UserService.InterFace.IAuthenticationService;
+import com.example.UserService.Service.redis.RedisService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -37,9 +41,9 @@ public class AuthenticationService implements UserDetailsService, IAuthenticatio
     private final AccountRepository accountRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
-
-
-
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+    private final String TOPIC4 ="user-report";
     public AccountResponse register(RegisterRequest registerRequest) {
         Account account = modelMapper.map(registerRequest, Account.class);
         try {
@@ -59,6 +63,13 @@ public class AuthenticationService implements UserDetailsService, IAuthenticatio
             account.setUuid(getAccountUuid);
             account.setImage("");
             Account newAccount = accountRepository.save(account);
+            try{
+                UserReportEvent event = new UserReportEvent();
+                event.setNewUser(1);
+                kafkaTemplate.send(TOPIC4,objectMapper.writeValueAsString(event));
+            }catch(Exception e){
+                throw new RuntimeException("Can not publish event Kafka to Report service" +e.getMessage());
+            }
             return modelMapper.map(newAccount, AccountResponse.class);
         } catch (Exception e) {
             if (e.getMessage().contains(account.getUsername())) {
